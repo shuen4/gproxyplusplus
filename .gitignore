@@ -1,0 +1,7 @@
+# Products of VS2008
+*.ncb
+*.suo
+
+# Folders created by VS2008
+release
+debug

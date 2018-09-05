@@ -317,7 +317,7 @@ int main( int argc, char **argv )
 	string Username;
 	string Password;
 	string Channel;
-	uint32_t War3Version = 24;
+	uint32_t War3Version = 30;
 	uint16_t Port = 6125;
 	BYTEARRAY EXEVersion;
 	BYTEARRAY EXEVersionHash;
@@ -397,6 +397,7 @@ int main( int argc, char **argv )
 		CONSOLE_Print( "  2. US East (Azeroth)", false );
 		CONSOLE_Print( "  3. Asia (Kalimdor)", false );
 		CONSOLE_Print( "  4. Europe (Northrend)", false );
+		CONSOLE_Print( "  5. EuroBattle ", false );
 		CONSOLE_Print( "", false );
 
 		do
@@ -413,6 +414,8 @@ int main( int argc, char **argv )
 				Server = "asia.battle.net";
 			else if( Server == "4" || Server == "4." || Server == "europe" || Server == "northrend" )
 				Server = "europe.battle.net";
+			else if( Server == "5" || Server == "5." || Server == "eurobattle" )
+				Server = "server.eurobattle.net";
 		} while( Server.empty( ) );
 
 		CONSOLE_Print( "", false );
@@ -468,11 +471,26 @@ int main( int argc, char **argv )
 			out << endl;
 			out << "### optional config values" << endl;
 			out << endl;
-			out << "war3version = " << War3Version << endl;
+			if( Server == "server.eurobattle.net" )
+			{
+				out << "war3version = 28" << endl;
+			}else
+			{
+				out << "war3version = " << War3Version << endl;
+			}
 			out << "port = " << Port << endl;
-			out << "exeversion =" << endl;
-			out << "exeversionhash =" << endl;
-			out << "passwordhashtype =" << endl;
+			if( Server == "server.eurobattle.net" )
+			{
+				//Eurobattle settings for patch 1.28.5
+				out << "exeversion = 0 5 28 1" << endl;
+				out << "exeversionhash = 201 63 116 96" << endl;
+				out << "passwordhashtype = pvpgn" << endl;
+			} else
+			{
+				out << "exeversion =" << endl;
+				out << "exeversionhash =" << endl;
+				out << "passwordhashtype =" << endl;
+			}
 			out.close( );
 		}
 	}
@@ -579,9 +597,7 @@ int main( int argc, char **argv )
 					CONSOLE_Print( "   /public             : enable listing of public games", false );
 					CONSOLE_Print( "   /publicoff          : disable listing of public games", false );
 					CONSOLE_Print( "   /r <message>        : reply to the last received whisper", false );
-#ifdef WIN32
 					CONSOLE_Print( "   /start              : start warcraft 3", false );
-#endif
 					CONSOLE_Print( "   /version            : show version text", false );
 					CONSOLE_Print( "", false );
 					CONSOLE_Print( "  In game:", false );
@@ -686,6 +702,22 @@ int main( int argc, char **argv )
 						CloseHandle( pi.hThread );
 					}
 				}
+#endif
+#ifdef __APPLE__
+                else if( Command == "/start" )
+                {
+                    string War3APP1, War3APP2;
+                    
+                    War3APP1 = "'/Applications/Warcraft III/Warcraft III.app/Contents/MacOS/Warcraft III'";
+                    War3APP2 = "'/Applications/Warcraft III/war3.app/Contents/MacOS/Warcraft III'";
+                    string command1 = "open " + War3APP1;
+                    string command2 = "open " + War3APP2;
+                    
+                    CONSOLE_Print( "[GPROXY] staring up warcraft 3..." );
+                    
+                    system(command1.c_str());
+                    system(command2.c_str());
+                }
 #endif
 				else if( Command == "/version" )
 					CONSOLE_Print( "[GPROXY] GProxy++ Version " + gGProxy->m_Version );
@@ -1437,7 +1469,17 @@ void CGProxy :: ProcessLocalPackets( )
 					string NameString = string( Name.begin( ), Name.end( ) );
 					BYTEARRAY Remainder = BYTEARRAY( Data.begin( ) + Name.size( ) + 20, Data.end( ) );
 
-					if( Remainder.size( ) == 18 )
+					// read config file
+					string gLogFile;
+					string CFGFile = "gproxy.cfg";
+
+					CConfig CFG;
+					CFG.Read( CFGFile );
+					gLogFile = CFG.GetString( "log", string( ) );
+
+					uint32_t War3Version = CFG.GetInt( "war3version", War3Version );
+
+					if(( Remainder.size( ) == 18 && War3Version <= 28 )||( Remainder.size( ) == 19 && War3Version >= 29 ))
 					{
 						// lookup the game in the main list
 
