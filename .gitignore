@@ -1,7 +1,11 @@
 # Products of VS2008
 *.ncb
 *.suo
-
-# Folders created by VS2008
 release
 debug
+
+# Files created by Mac terminal compile
+*.dylib
+gproxy/gproxy++
+*.o
+.DS_Store
