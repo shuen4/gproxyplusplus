@@ -1,6 +1,7 @@
 # Products of VS2008
 *.ncb
 *.suo
+*.user
 release
 debug
 
