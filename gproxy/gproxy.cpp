@@ -368,36 +368,113 @@ int main( int argc, char **argv )
 #endif
 		War3Path = UTIL_AddPathSeperator( War3Path );
 
+#ifdef WIN32
+		string w3kROC = War3Path + "roc.w3k";
+		string w3kTFT = War3Path + "tft.w3k";
+		string ProgramDataPath = "C:/ProgramData/Blizzard Entertainment/Warcraft III/";
+
+		string w3kTFTKey, w3kROCKey;
+
+		if( !UTIL_FileExists( w3kROC ) )
+			w3kROC = ProgramDataPath + "roc.w3k";
+
+		if( !UTIL_FileExists( w3kTFT ) )
+			w3kTFT = ProgramDataPath + "tft.w3k";
+
+		if( UTIL_FileExists( w3kROC ) )
+			w3kROCKey = UTIL_FileRead( w3kROC );
+
+		if( UTIL_FileExists( w3kROC ) )
+			w3kTFTKey = UTIL_FileRead( w3kTFT );
+#else
+		string w3kROC = War3Path + "roc.w3k";
+		string w3kTFT = War3Path + "tft.w3k";
+		string w3kTFTKey, w3kROCKey;
+
+		if( !UTIL_FileExists( w3kROC )
+			w3kROC = "/Users/Shared/Blizzard/Warcraft III/roc.w3k";
+
+		if( !UTIL_FileExists( w3kTFT )
+			w3kTFT = "/Users/Shared/Blizzard/Warcraft III/tft.w3k";
+
+		if( Util_FileExists( w3kROC )
+			w3kROCKey = UTIL_FileRead( w3kROC );
+
+		if( Util_FileExists( w3kTFT )
+			w3kTFTKey = UTIL_FileRead( w3kTFT );
+#endif
+		
 		CONSOLE_Print( "", false );
 		CONSOLE_Print( "  Enter your CD key(s) with or without dashes, capital letters or lowercase.", false );
+		CONSOLE_Print( "  If you want to use the detected CD Keys just leave it blank (press enter).", false );
 		CONSOLE_Print( "", false );
-
-		do
+		
+		if( !UTIL_FileExists( w3kROC ) )
 		{
-			CONSOLE_PrintNoCRLF( "  Reign of Chaos CD key: ", false );
-			getline( cin, CDKeyROC );
-			CDKeyROC.erase( remove( CDKeyROC.begin( ), CDKeyROC.end( ), '-' ), CDKeyROC.end( ) );
-			transform( CDKeyROC.begin( ), CDKeyROC.end( ), CDKeyROC.begin( ), (int(*)(int))toupper );
-		} while( CDKeyROC.size( ) != 26 );
-
-		CONSOLE_Print( "", false );
-
-		do
+			CONSOLE_PrintNoCRLF( "  Reign of Chaos CD Key Detected: None", false );
+			CONSOLE_Print( "", false );
+			do
+			{
+				CONSOLE_PrintNoCRLF( "  Reign of Chaos CD key: ", false );
+				getline( cin, CDKeyROC );
+				CDKeyROC.erase( remove( CDKeyROC.begin( ), CDKeyROC.end( ), '-' ), CDKeyROC.end( ) );
+				transform( CDKeyROC.begin( ), CDKeyROC.end( ), CDKeyROC.begin( ), (int(*)(int))toupper );
+			} while( CDKeyROC.size( ) != 26 );
+			CONSOLE_Print( "", false );
+		} else
 		{
-			CONSOLE_PrintNoCRLF( "  Frozen Throne CD key: ", false );
-			getline( cin, CDKeyTFT );
-			CDKeyTFT.erase( remove( CDKeyTFT.begin( ), CDKeyTFT.end( ), '-' ), CDKeyTFT.end( ) );
-			transform( CDKeyTFT.begin( ), CDKeyTFT.end( ), CDKeyTFT.begin( ), (int(*)(int))toupper );
-		} while( !CDKeyTFT.empty( ) && CDKeyTFT.size( ) != 26 );
+			CONSOLE_PrintNoCRLF( "  Reign of Chaos CD Key Detected: " + w3kROCKey, false );
+			CONSOLE_Print( "", false );
+			do
+			{
+				CONSOLE_PrintNoCRLF( "  Reign of Chaos CD key: ", false );
+				getline( cin, CDKeyROC );
+				CDKeyROC.erase( remove( CDKeyROC.begin( ), CDKeyROC.end( ), '-' ), CDKeyROC.end( ) );
+				transform( CDKeyROC.begin( ), CDKeyROC.end( ), CDKeyROC.begin( ), (int(*)(int))toupper );
+
+				if( CDKeyROC.empty( ) )
+					CDKeyROC = w3kROCKey;
+			} while( CDKeyROC.size( ) != 26 );
+			CONSOLE_Print( "", false );
+		}
+		if( !UTIL_FileExists( w3kTFT ) )
+		{
+			CONSOLE_PrintNoCRLF( "  Frozen Throne CD Key Detected: None ", false );
+			CONSOLE_Print( "", false );
+			do
+			{
+				CONSOLE_PrintNoCRLF( "  Frozen Throne CD key: ", false );
+				getline( cin, CDKeyTFT );
+				CDKeyTFT.erase( remove( CDKeyTFT.begin( ), CDKeyTFT.end( ), '-' ), CDKeyTFT.end( ) );
+				transform( CDKeyTFT.begin( ), CDKeyTFT.end( ), CDKeyTFT.begin( ), (int(*)(int))toupper );
+			} while( !CDKeyTFT.empty( ) && CDKeyTFT.size( ) != 26 );
+		} else
+		{
+			CONSOLE_PrintNoCRLF( "  Frozen Throne CD Key Detected: " + w3kTFTKey, false );
+			CONSOLE_Print( "", false );
+			do
+			{
+				CONSOLE_PrintNoCRLF( "  Frozen Throne CD key: ", false );
+				getline( cin, CDKeyTFT );
+				CDKeyTFT.erase( remove( CDKeyTFT.begin( ), CDKeyTFT.end( ), '-' ), CDKeyTFT.end( ) );
+				transform( CDKeyTFT.begin( ), CDKeyTFT.end( ), CDKeyTFT.begin( ), (int(*)(int))toupper );
+
+				if( CDKeyTFT.empty( ) )
+					CDKeyTFT = w3kTFTKey;
+			} while( !CDKeyTFT.empty( ) && CDKeyTFT.size( ) != 26 );
+			
+		}
 
 		CONSOLE_Print( "", false );
 		CONSOLE_Print( "  Select a battle.net server to connect to.", false );
-		CONSOLE_Print( "  Enter one of the following numbers (1-4) or enter a custom address.", false );
+		CONSOLE_Print( "  Enter one of the following numbers (1-6) or enter a custom address.", false );
 		CONSOLE_Print( "  1. US West (Lordaeron)", false );
 		CONSOLE_Print( "  2. US East (Azeroth)", false );
 		CONSOLE_Print( "  3. Asia (Kalimdor)", false );
 		CONSOLE_Print( "  4. Europe (Northrend)", false );
-		CONSOLE_Print( "  5. EuroBattle ", false );
+		CONSOLE_Print( "  5. Public Test Realm (PTR) ", false );
+		CONSOLE_Print( "  6. EuroBattle (PvPGN) ", false );
+
 		CONSOLE_Print( "", false );
 
 		do
@@ -414,7 +491,9 @@ int main( int argc, char **argv )
 				Server = "asia.battle.net";
 			else if( Server == "4" || Server == "4." || Server == "europe" || Server == "northrend" )
 				Server = "europe.battle.net";
-			else if( Server == "5" || Server == "5." || Server == "eurobattle" )
+			else if( Server == "5" || Server == "5." || Server == "ptr" || Server == "public" || Server == "test" )
+				Server = "war3-ptr.classic.blizzard.com";
+			else if( Server == "6" || Server == "6." || Server == "eurobattle" )
 				Server = "server.eurobattle.net";
 		} while( Server.empty( ) );
 
@@ -474,7 +553,10 @@ int main( int argc, char **argv )
 			if( Server == "server.eurobattle.net" )
 			{
 				out << "war3version = 28" << endl;
-			}else
+			}else if ( Server == "war3-ptr.classic.blizzard.com" )
+			{
+				out << "war3version = 30" << endl;
+			} else
 			{
 				out << "war3version = " << War3Version << endl;
 			}
