@@ -391,16 +391,16 @@ int main( int argc, char **argv )
 		string w3kTFT = War3Path + "tft.w3k";
 		string w3kTFTKey, w3kROCKey;
 
-		if( !UTIL_FileExists( w3kROC )
+		if( !UTIL_FileExists( w3kROC ) )
 			w3kROC = "/Users/Shared/Blizzard/Warcraft III/roc.w3k";
 
-		if( !UTIL_FileExists( w3kTFT )
+		if( !UTIL_FileExists( w3kTFT ) )
 			w3kTFT = "/Users/Shared/Blizzard/Warcraft III/tft.w3k";
 
-		if( Util_FileExists( w3kROC )
+		if( UTIL_FileExists( w3kROC ) )
 			w3kROCKey = UTIL_FileRead( w3kROC );
 
-		if( Util_FileExists( w3kTFT )
+		if( UTIL_FileExists( w3kTFT ) )
 			w3kTFTKey = UTIL_FileRead( w3kTFT );
 #endif
 		
