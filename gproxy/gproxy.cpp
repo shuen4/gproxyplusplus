@@ -768,16 +768,25 @@ int main( int argc, char **argv )
 					ZeroMemory( &pi, sizeof( pi ) );
 					string War3EXE;
 
-					if( !CDKeyTFT.empty( ) )
-						War3EXE = War3Path + "Frozen Throne.exe";
-					else
-						War3EXE = War3Path + "Warcraft III.exe";
-
+					War3EXE = War3Path + "Warcraft III.exe";
 					BOOL hProcess = CreateProcessA( War3EXE.c_str( ), NULL, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, War3Path.c_str( ), LPSTARTUPINFOA( &si ), &pi );
 
 					if( !hProcess )
+					{
+						War3EXE = War3Path + "war3.exe";
+						BOOL hProcess = CreateProcessA( War3EXE.c_str( ), NULL, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, War3Path.c_str( ), LPSTARTUPINFOA( &si ), &pi );
+					} else if( !hProcess )
+					{
+						War3EXE = War3Path + "warcraft.exe";
+						BOOL hProcess = CreateProcessA( War3EXE.c_str( ), NULL, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, War3Path.c_str( ), LPSTARTUPINFOA( &si ), &pi );
+					} else if( !hProcess )
+					{
+						War3EXE = War3Path + "Frozen Throne.exe";
+						BOOL hProcess = CreateProcessA( War3EXE.c_str( ), NULL, NULL, NULL, FALSE, NORMAL_PRIORITY_CLASS, NULL, War3Path.c_str( ), LPSTARTUPINFOA( &si ), &pi );
+					} else if( !hProcess )
+					{
 						CONSOLE_Print( "[GPROXY] failed to start warcraft 3" );
-					else
+					} else
 					{
 						CONSOLE_Print( "[GPROXY] started warcraft 3" );
 						CloseHandle( pi.hProcess );
