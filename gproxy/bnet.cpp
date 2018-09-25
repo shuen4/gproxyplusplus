@@ -746,7 +746,7 @@ void CBNET :: ProcessChatEvent( CIncomingChatEvent *chatEvent )
 			// yes - ok, copy the message then lowercase it so that we
 			// can search it effectively.
 			string MsgCopy = string(Message);
-			transform(MsgCopy.begin(), MsgCopy.end(), MsgCopy.begin(), tolower);
+			transform(MsgCopy.begin(), MsgCopy.end(), MsgCopy.begin(), ::tolower);
 
 			if (MsgCopy.find(trackData.username) == 0) {
 				// message starts with the username we're looking for, so it might be interesting...
