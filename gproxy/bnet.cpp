@@ -27,6 +27,9 @@
 #include "bnet.h"
 #include "gameprotocol.h"
 
+
+#include "gettimeofday.h"
+
 //
 // CBNET
 //
@@ -93,6 +96,11 @@ CBNET :: CBNET( CGProxy *nGProxy, string nServer, string nBNLSServer, uint16_t n
 	m_LoggedIn = false;
 	m_InChat = false;
 	m_InGame = false;
+	
+	
+	trackData.active = false;
+	trackData.username = "";
+	gettimeofday(&(trackData.lastWhoisTime), NULL);
 }
 
 CBNET :: ~CBNET( )
@@ -729,7 +737,54 @@ void CBNET :: ProcessChatEvent( CIncomingChatEvent *chatEvent )
 	else if( Event == CBNETProtocol :: EID_CHANNELRESTRICTED )
 		CONSOLE_Print( "[BNET] channel restricted" );
 	else if( Event == CBNETProtocol :: EID_INFO )
+	{
 		CONSOLE_Print( "[INFO] " + Message );
+		
+		
+		// are we tracking a user by issuing /whois commands ever few seconds?
+		if (trackData.active) {
+			// yes - ok, copy the message then lowercase it so that we
+			// can search it effectively.
+			string MsgCopy = string(Message);
+			transform(MsgCopy.begin(), MsgCopy.end(), MsgCopy.begin(), tolower);
+
+			if (MsgCopy.find(trackData.username) == 0) {
+				// message starts with the username we're looking for, so it might be interesting...
+				int index;
+				string IN_GAME = " in game ";
+				if ( (index = MsgCopy.find(IN_GAME)) != MsgCopy.npos ) {
+					// the user we're tracking is (now) in a game! hooray!
+					
+					// the game name is at the end of the message, but be sure to clip the "." char off the end...
+					int startPos = index + IN_GAME.length();
+					int nChars = MsgCopy.length() - startPos - 1;
+
+					if (nChars >= 1) {
+						string gameName = MsgCopy.substr(startPos, nChars);
+						SetSearchGameName(gameName); // Start looking for the game
+
+						// same log message as if the user typed /game ...
+						CONSOLE_Print( "[BNET] looking for a game named \"" + gameName + "\" for up to two minutes" );
+
+						trackData.active = false; // stop tracking
+
+#ifdef WIN32
+						// notify user that we've found a game
+						PlaySound(L"track_done.wav", NULL, SND_FILENAME | SND_ASYNC);
+#endif				
+#ifdef __APPLE__
+						// notify user that we've found a game
+						string file = "track_done.wav";
+						string command = "afplay " + file;
+						system(command.c_str());
+#endif
+					} else {
+						CONSOLE_Print("Unable to find game name in message: " + MsgCopy);
+					}
+				}
+			}
+		}
+	} 
 	else if( Event == CBNETProtocol :: EID_ERROR )
 		CONSOLE_Print( "[ERROR] " + Message );
 	else if( Event == CBNETProtocol :: EID_EMOTE )

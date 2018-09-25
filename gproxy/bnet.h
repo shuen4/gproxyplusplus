@@ -125,6 +125,13 @@ public:
 	void QueueGetGameList( uint32_t numGames );
 	void QueueGetGameList( string gameName );
 	void QueueJoinGame( string gameName );
+	
+	
+	struct _trackData {
+		bool active;
+		string username;
+		struct timeval lastWhoisTime;
+	} trackData;
 };
 
 #endif

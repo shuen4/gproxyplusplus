@@ -28,6 +28,9 @@
 #include "gameprotocol.h"
 #include "gpsprotocol.h"
 
+
+#include "gettimeofday.h"
+
 #include <signal.h>
 #include <stdlib.h>
 
@@ -632,10 +635,30 @@ int main( int argc, char **argv )
 
 	gGProxy = new CGProxy( !CDKeyTFT.empty( ), War3Path, CDKeyROC, CDKeyTFT, Server, Username, Password, Channel, War3Version, Port, EXEVersion, EXEVersionHash, PasswordHashType );
 
+	
+	struct timeval currTime;
+	int timeDiff;
+
 	while( 1 )
 	{
 		if( gGProxy->Update( 40000 ) )
 			break;
+
+		
+		if (gGProxy->m_BNET->trackData.active) {
+			gettimeofday(&currTime, NULL);
+
+			// find difference, in milliseconds.
+			timeDiff = (currTime.tv_sec - gGProxy->m_BNET->trackData.lastWhoisTime.tv_sec) * 1000;
+			timeDiff += (currTime.tv_usec - gGProxy->m_BNET->trackData.lastWhoisTime.tv_usec) / 1000;
+			
+			if (timeDiff >= 4000) {
+				//CONSOLE_Print("DO WHOIS NOW");
+				gGProxy->m_BNET->QueueChatCommand( "/whois " + gGProxy->m_BNET->trackData.username );
+				// reset last whois time
+				memcpy(&(gGProxy->m_BNET->trackData.lastWhoisTime), &currTime, sizeof(currTime));
+			}
+		}
 
 		bool Quit = false;
 		int c = wgetch( gInputWindow );
@@ -675,6 +698,8 @@ int main( int argc, char **argv )
 					CONSOLE_Print( "   /filter <f>         : start filtering public game names for <f>", false );
 					CONSOLE_Print( "   /filteroff          : stop filtering public game names", false );
 					CONSOLE_Print( "   /game <gamename>    : look for a specific game named <gamename>", false );
+					CONSOLE_Print( "   /track <username>   : starts tracking specific username", false );
+					CONSOLE_Print( "   /trackoff           : stops tracking", false );
 					CONSOLE_Print( "   /help               : show help text", false );
 					CONSOLE_Print( "   /public             : enable listing of public games", false );
 					CONSOLE_Print( "   /publicoff          : disable listing of public games", false );
@@ -812,6 +837,21 @@ int main( int argc, char **argv )
 #endif
 				else if( Command == "/version" )
 					CONSOLE_Print( "[GPROXY] GProxy++ Version " + gGProxy->m_Version );
+
+						
+				else if( Command.size( ) >= 8 && Command.substr( 0, 7 ) == "/track " )
+				{
+					gGProxy->m_BNET->trackData.active = true;
+					gGProxy->m_BNET->trackData.username = Command.substr(7);
+				}
+				else if( Command == "/trackoff" ) {
+					if (gGProxy->m_BNET->trackData.active) {
+						CONSOLE_Print("[BNET] Stopped tracking " + gGProxy->m_BNET->trackData.username);
+						gGProxy->m_BNET->trackData.active = false;
+					} else {
+						CONSOLE_Print("[BNET] Tracking is not active.");
+					}
+				}
 				else
 					gGProxy->m_BNET->QueueChatCommand( gInputBuffer );
 
@@ -1435,7 +1475,7 @@ void CGProxy :: ExtractLocalPackets( )
 								}
 
 								string Command = MessageString;
-								transform( Command.begin( ), Command.end( ), Command.begin( ), (int(*)(int))tolower );
+								transform( Command.begin( ), Command.end( ), Command.begin( ), ::tolower );
 
 								if( Command.size( ) >= 1 && Command.substr( 0, 1 ) == "/" )
 								{
