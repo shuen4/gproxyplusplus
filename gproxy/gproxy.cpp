@@ -1485,7 +1485,7 @@ void CGProxy :: ExtractLocalPackets( )
 								}
 
 								string Command = MessageString;
-								transform( Command.begin( ), Command.end( ), Command.begin( ), (int(*)(int))toupper );
+								transform( Command.begin( ), Command.end( ), Command.begin( ), (int(*)(int))tolower );
 
 								if( Command.size( ) >= 1 && Command.substr( 0, 1 ) == "/" )
 								{
