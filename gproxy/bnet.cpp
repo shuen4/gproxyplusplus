@@ -237,7 +237,7 @@ bool CBNET :: Update( void *fd, void *send_fd )
 
 		// request the search game every 15 seconds
 
-		if( !m_SearchGameName.empty( ) && GetTime( ) - m_SearchGameNameTime >= 120 )
+		if (!m_SearchGameName.empty() && GetTime() - m_SearchGameNameTime >= 120 && m_SearchGameNameTime != 0xFFFFFFFF)
 		{
 			CONSOLE_Print( "[BNET] stopped searching for game \"" + m_SearchGameName + "\"" );
 			m_SearchGameName.clear( );
@@ -323,7 +323,7 @@ bool CBNET :: Update( void *fd, void *send_fd )
 		// attempt to connect to battle.net
 
 		m_FirstConnect = false;
-		CONSOLE_Print( "[BNET] connecting to server [" + m_Server + "] on port 6112" );
+		CONSOLE_Print( "[BNET] connecting to server [" + m_Server + "] on port 6112");
 
 		if( m_ServerIP.empty( ) )
 		{

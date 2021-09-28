@@ -37,6 +37,7 @@ public:
 	int GetInt( string key, int x );
 	string GetString( string key, string x );
 	void Set( string key, string x );
+	bool Save(string filename);
 };
 
 #endif

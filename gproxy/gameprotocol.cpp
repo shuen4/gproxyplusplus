@@ -19,7 +19,8 @@
 #include "gproxy.h"
 #include "util.h"
 #include "gameprotocol.h"
-
+#include <Windows.h>
+#include "config.h"
 //
 // CGameProtocol
 //
@@ -93,7 +94,8 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_SEARCHGAME( bool TFT, unsigned char war3Ver
 	// DEBUG_Print( packet );
 	return packet;
 }
-
+// process , gameid , uptime
+vector<pair<HANDLE, pair<uint32_t,uint32_t>>> BroadcastHelper;
 BYTEARRAY CGameProtocol :: SEND_W3GS_GAMEINFO( bool TFT, unsigned char war3Version, BYTEARRAY mapGameType, BYTEARRAY mapFlags, BYTEARRAY mapWidth, BYTEARRAY mapHeight, string gameName, string hostName, uint32_t upTime, string mapPath, BYTEARRAY mapCRC, uint32_t slotsTotal, uint32_t slotsOpen, uint16_t port, uint32_t hostCounter, uint32_t entryKey )
 {
 	unsigned char ProductID_ROC[]	= {          51, 82, 65, 87 };	// "WAR3"
@@ -102,7 +104,47 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_GAMEINFO( bool TFT, unsigned char war3Versi
 	unsigned char Unknown[]			= {           1,  0,  0,  0 };
 
 	BYTEARRAY packet;
-
+	if (m_GProxy->m_War3Version == 31) {
+		for (int i = 0; i < BroadcastHelper.size(); i++)
+			if (BroadcastHelper[i].second.first == hostCounter) {
+				TerminateProcess(BroadcastHelper[i].first, 0);
+				CloseHandle(BroadcastHelper[i].first);
+				remove(("broadcast" + UTIL_ToString(BroadcastHelper[i].second.first) + ".cfg").c_str());
+				BroadcastHelper.erase(BroadcastHelper.begin() + i);
+				break;
+			}
+		CConfig BroadCastData;
+		BroadCastData.Set("game_secret", UTIL_ToString(entryKey));
+		BroadCastData.Set("_type", "1");														// ???
+		BroadCastData.Set("_subtype", "0");														// ???
+		BroadCastData.Set("game_id", UTIL_ToString(hostCounter));
+		BroadCastData.Set("_name", gameName);
+		BroadCastData.Set("players_max", UTIL_ToString(slotsTotal));
+		BroadCastData.Set("_flags", "0");														// ???
+		BroadCastData.Set("players_num", UTIL_ToString(slotsTotal - slotsOpen));
+		BroadCastData.Set("game_create_time", UTIL_ToString(upTime));
+		BroadCastData.Set("statstring_mapflags", UTIL_ByteArrayToDecString(mapFlags));
+		// not necessary
+		// BroadCastData.Set("statstring_mapwidth", "0 0");
+		// BroadCastData.Set("statstring_mapheight", "0 0");
+		BroadCastData.Set("statstring_mapcrc", UTIL_ByteArrayToDecString(mapCRC));
+		BroadCastData.Set("statstring_mappath", mapPath);
+		BroadCastData.Set("statstring_hostname", hostName);
+		// not necessary
+		BroadCastData.Set("statstring_mapsha1", "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0");
+		BroadCastData.Set("port", UTIL_ToString(port));
+		if (BroadCastData.Save("broadcast" + UTIL_ToString(hostCounter) + ".cfg")) {
+			STARTUPINFOA si;
+			PROCESS_INFORMATION pi;
+			ZeroMemory(&si, sizeof(si));
+			si.cb = sizeof(si);
+			ZeroMemory(&pi, sizeof(pi));
+			CreateProcessA(NULL, (LPSTR)("BroadcastHelper.exe broadcast" + UTIL_ToString(hostCounter) + ".cfg").c_str(), NULL, NULL, false, 0, NULL, NULL, &si, &pi);
+			BroadcastHelper.push_back(pair<HANDLE, pair<uint32_t, uint32_t>>(pi.hProcess, pair<uint32_t, uint32_t>(hostCounter, upTime)));
+		}
+		else
+			CONSOLE_Print("[BROADCAST] unable to save confnig");
+	}
 	if( mapGameType.size( ) == 4 && mapFlags.size( ) == 4 && mapWidth.size( ) == 2 && mapHeight.size( ) == 2 && !gameName.empty( ) && !hostName.empty( ) && !mapPath.empty( ) && mapCRC.size( ) == 4 )
 	{
 		// make the stat string
@@ -199,6 +241,15 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_REFRESHGAME( uint32_t players, uint32_t pla
 
 BYTEARRAY CGameProtocol :: SEND_W3GS_DECREATEGAME( uint32_t hostCounter )
 {
+	if (m_GProxy->m_War3Version == 31)
+		for (int i=0;i<BroadcastHelper.size();i++)
+			if (BroadcastHelper[i].second.first == hostCounter) {
+				TerminateProcess(BroadcastHelper[i].first, 0);
+				CloseHandle(BroadcastHelper[i].first);
+				remove(("broadcast" + UTIL_ToString(BroadcastHelper[i].second.first) + ".cfg").c_str());
+				BroadcastHelper.erase(BroadcastHelper.begin() + i);
+				break;
+			}
 	BYTEARRAY packet;
 	packet.push_back( W3GS_HEADER_CONSTANT );			// W3GS header constant
 	packet.push_back( W3GS_DECREATEGAME );				// W3GS_DECREATEGAME

@@ -247,8 +247,8 @@ void CTCPSocket :: DoRecv( fd_set *fd )
 	{
 		// data is waiting, receive it
 
-		char buffer[1024];
-		int c = recv( m_Socket, buffer, 1024, 0 );
+		char buffer[65535];
+		int c = recv( m_Socket, buffer, 65535, 0 );
 
 		if( c == SOCKET_ERROR && GetLastError( ) != EWOULDBLOCK )
 		{
@@ -769,12 +769,12 @@ void CUDPServer :: RecvFrom( fd_set *fd, struct sockaddr_in *sin, string *messag
 	{
 		// data is waiting, receive it
 
-		char buffer[1024];
+		char buffer[65535];
 
 #ifdef WIN32
-		int c = recvfrom( m_Socket, buffer, 1024, 0, (struct sockaddr *)sin, &AddrLen );
+		int c = recvfrom( m_Socket, buffer, 65535, 0, (struct sockaddr *)sin, &AddrLen );
 #else
-		int c = recvfrom( m_Socket, buffer, 1024, 0, (struct sockaddr *)sin, (socklen_t *)&AddrLen );
+		int c = recvfrom( m_Socket, buffer, 65535, 0, (struct sockaddr *)sin, (socklen_t *)&AddrLen );
 #endif
 
 		if( c == SOCKET_ERROR && GetLastError( ) != EWOULDBLOCK )

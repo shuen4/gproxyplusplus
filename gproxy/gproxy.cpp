@@ -54,7 +54,8 @@
 #else
  #include <curses.h>
 #endif
-
+unsigned int test_packet = 0;
+int mode;
 bool gCurses = false;
 vector<string> gMainBuffer;
 string gInputBuffer;
@@ -285,10 +286,25 @@ int main( int argc, char **argv )
 
 	CConfig CFG;
 	CFG.Read( CFGFile );
-	gLogFile = CFG.GetString( "log", string( ) );
+	gLogFile = CFG.GetString( "log", "gproxy.log" );
+	remove(gLogFile.c_str());
 
 	CONSOLE_Print( "[GPROXY] starting up" );
-
+	if (CFG.GetString("mode", string()) == "0")
+	{
+		mode = 0;
+		CONSOLE_Print("[GPROXY] using working mode 0",false);
+	}
+	else if (CFG.GetString("mode", string()) == "1")
+	{
+		mode = 1;
+		CONSOLE_Print("[GPROXY] using working mode 1",false);
+	}
+	else
+	{
+		mode = 1;
+		CONSOLE_Print("[GPROXY] invalid mode. using working mode 1");
+	}
 #ifndef WIN32
 	// disable SIGPIPE since some systems like OS X don't define MSG_NOSIGNAL
 
@@ -635,16 +651,17 @@ int main( int argc, char **argv )
 	keypad( gInputWindow, TRUE );
 	scrollok( gInputWindow, TRUE );
 	CONSOLE_Print( "  Type /help at any time for help.", false );
-	CONSOLE_Print( "  Press any key to continue.", false );
+	//CONSOLE_Print( "  Press any key to continue.", false );
 	CONSOLE_Print( "", false );
 	CONSOLE_Draw( );
-	wgetch( gInputWindow );
+	//wgetch( gInputWindow );
 	nodelay( gInputWindow, TRUE );
 
 	// initialize gproxy
 
 	gGProxy = new CGProxy( !CDKeyTFT.empty( ), War3Path, CDKeyROC, CDKeyTFT, Server, Username, Password, Channel, War3Version, Port, EXEVersion, EXEVersionHash, PasswordHashType );
-
+	gGProxy->m_BNET->SetListPublicGames(true);
+	gGProxy->m_BNET->SetSearchGameName("|c0060ff00GHost++", 0xFFFFFFFF);
 	
 	struct timeval currTime;
 	int timeDiff;
@@ -698,7 +715,17 @@ int main( int argc, char **argv )
 				string Command = gInputBuffer;
 				transform( Command.begin( ), Command.end( ), Command.begin( ), (int(*)(int))tolower );
 
-				if( Command == "/commands" )
+				if (Command == "/mode") {
+					if (mode == 1) {
+						mode = 0;
+						CONSOLE_Print("[GProxy] GProxy++ working mode changed to 0 (default)",false);
+					}
+					else {
+						mode = 1;
+						CONSOLE_Print("[GProxy] GProxy++ working mode changed to 1",false);
+					}
+				}
+				else if( Command == "/commands" )
 				{
 					CONSOLE_Print( ">>> /commands" );
 					CONSOLE_Print( "", false );
@@ -988,6 +1015,7 @@ CGProxy :: CGProxy( bool nTFT, string nWar3Path, string nCDKeyROC, string nCDKey
 	m_BNET = new CBNET( this, m_Server, string( ), 0, 0, m_CDKeyROC, m_CDKeyTFT, "USA", "United States", m_Username, m_Password, m_Channel, m_War3Version, nEXEVersion, nEXEVersionHash, nPasswordHashType, 200 );
 	m_LocalServer->Listen( string( ), m_Port );
 	CONSOLE_Print( "[GPROXY] GProxy++ Version " + m_Version );
+	//m_SaveGame = false;
 }
 
 CGProxy :: ~CGProxy( )
@@ -1378,7 +1406,6 @@ bool CGProxy :: Update( long usecBlock )
 		//
 		// handle game listing
 		//
-
 		if( GetTime( ) - m_LastRefreshTime >= 2 )
 		{
 			for( vector<CIncomingGameHost *> :: iterator i = m_Games.begin( ); i != m_Games.end( ); )
@@ -1407,7 +1434,6 @@ bool CGProxy :: Update( long usecBlock )
 
 				if( (*i)->GetMapWidth( ) == 1984 && (*i)->GetMapHeight( ) == 1984 )
 				{
-					GameName = "|cFF4080C0" + GameName;
 
 					// unfortunately we have to truncate them
 					// is this acceptable?
@@ -1427,7 +1453,7 @@ bool CGProxy :: Update( long usecBlock )
 	return m_Exiting;
 }
 
-void CGProxy :: ExtractLocalPackets( )
+void CGProxy::ExtractLocalPackets()
 {
 	if( !m_LocalSocket )
 		return;
@@ -1563,8 +1589,10 @@ void CGProxy :: ExtractLocalPackets( )
 					*RecvBuffer = RecvBuffer->substr( Length );
 					Bytes = BYTEARRAY( Bytes.begin( ) + Length, Bytes.end( ) );
 				}
-				else
+				else {
+					CONSOLE_Print("[GPROXY] received invalid packet from local player (received packet size < size value in packet data) - current data passed to next update" );
 					return;
+				}
 			}
 			else
 			{
@@ -1582,7 +1610,7 @@ void CGProxy :: ExtractLocalPackets( )
 	}
 }
 
-void CGProxy :: ProcessLocalPackets( )
+void CGProxy::ProcessLocalPackets()
 {
 	if( !m_LocalSocket )
 		return;
@@ -1611,14 +1639,15 @@ void CGProxy :: ProcessLocalPackets( )
 					BYTEARRAY Remainder = BYTEARRAY( Data.begin( ) + Name.size( ) + 20, Data.end( ) );
 
 					// read config file
-					string gLogFile;
+					/*string gLogFile;
 					string CFGFile = "gproxy.cfg";
 
 					CConfig CFG;
 					CFG.Read( CFGFile );
 					gLogFile = CFG.GetString( "log", string( ) );
 
-					uint32_t War3Version = CFG.GetInt( "war3version", War3Version );
+					uint32_t War3Version = CFG.GetInt( "war3version", War3Version );*/
+					uint32_t War3Version = m_War3Version;
 
 					if(( Remainder.size( ) == 18 && War3Version <= 28 )||( Remainder.size( ) == 19 && War3Version >= 29 ))
 					{
@@ -1632,7 +1661,7 @@ void CGProxy :: ProcessLocalPackets( )
 							{
 								CONSOLE_Print( "[GPROXY] local player requested game name [" + (*i)->GetGameName( ) + "]" );
 
-								if( NameString != m_Username )
+								if( NameString != m_Username && mode == 0)
 									CONSOLE_Print( "[GPROXY] using battle.net name [" + m_Username + "] instead of requested name [" + NameString + "]" );
 
 								CONSOLE_Print( "[GPROXY] connecting to remote server [" + (*i)->GetIPString( ) + "] on port " + UTIL_ToString( (*i)->GetPort( ) ) );
@@ -1644,7 +1673,7 @@ void CGProxy :: ProcessLocalPackets( )
 								m_LastConnectionAttemptTime = GetTime( );
 								m_GameIsReliable = ( (*i)->GetMapWidth( ) == 1984 && (*i)->GetMapHeight( ) == 1984 );
 								m_GameStarted = false;
-
+								//m_SaveGame = (*i)->GetGameType() == 1 << 9;
 								// rewrite packet
 
 								BYTEARRAY DataRewritten;
@@ -1657,7 +1686,12 @@ void CGProxy :: ProcessLocalPackets( )
 								DataRewritten.push_back( Unknown );
 								UTIL_AppendByteArray( DataRewritten, ListenPort, false );
 								UTIL_AppendByteArray( DataRewritten, PeerKey, false );
-								UTIL_AppendByteArray( DataRewritten, m_Username );
+								string a;
+								if (mode == 1)
+									a = NameString;
+								else
+									a = m_Username;
+								UTIL_AppendByteArray( DataRewritten, a );
 								UTIL_AppendByteArrayFast( DataRewritten, Remainder );
 								BYTEARRAY LengthBytes;
 								LengthBytes = UTIL_CreateByteArray( (uint16_t)DataRewritten.size( ), false );
@@ -1711,7 +1745,7 @@ void CGProxy :: ProcessLocalPackets( )
 	}
 }
 
-void CGProxy :: ExtractRemotePackets( )
+void CGProxy :: ExtractRemotePackets()
 {
 	string *RecvBuffer = m_RemoteSocket->GetBytes( );
 	BYTEARRAY Bytes = UTIL_CreateByteArray( (unsigned char *)RecvBuffer->c_str( ), RecvBuffer->size( ) );
@@ -1738,8 +1772,10 @@ void CGProxy :: ExtractRemotePackets( )
 					*RecvBuffer = RecvBuffer->substr( Length );
 					Bytes = BYTEARRAY( Bytes.begin( ) + Length, Bytes.end( ) );
 				}
-				else
+				else {
+					CONSOLE_Print("[GPROXY] received invalid packet from remote server (received packet size < size value in packet data) - current data passed to next update");
 					return;
+				}
 			}
 			else
 			{
@@ -1790,6 +1826,7 @@ void CGProxy :: ProcessRemotePackets( )
 				{
 					CONSOLE_Print( "[GPROXY] detected reliable game, starting GPS handshake" );
 					m_RemoteSocket->PutBytes( m_GPSProtocol->SEND_GPSC_INIT( 1 ) );
+					m_BNET->QueueChatCommand("/w " + m_HostName + " sc");
 				}
 				else
 					CONSOLE_Print( "[GPROXY] detected standard game, disconnect protection disabled" );
@@ -1929,7 +1966,9 @@ void CGProxy :: ProcessRemotePackets( )
 
 			if( Packet->GetID( ) == CGameProtocol :: W3GS_SLOTINFOJOIN )
 			{
-				if( m_JoinedName != m_Username )
+				/*if (m_SaveGame)
+					SendLocalChat("A saved game is detected, if the slot is abnormal, please restart GProxy++.");*/
+				if( m_JoinedName != m_Username && mode == 0)
 					SendLocalChat( "Using battle.net name \"" + m_Username + "\" instead of LAN name \"" + m_JoinedName + "\"." );
 
 				if( m_GameIsReliable )
@@ -2052,7 +2091,6 @@ bool CGProxy :: AddGame( CIncomingGameHost *game )
 		{
 			// duplicate or rehosted game, delete the old one and add the new one
 			// don't forget to remove the old one from the LAN list first
-
 			m_UDPSocket->Broadcast( 6112, m_GameProtocol->SEND_W3GS_DECREATEGAME( (*i)->GetUniqueGameID( ) ) );
 			delete *i;
 			*i = game;

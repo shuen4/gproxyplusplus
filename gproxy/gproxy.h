@@ -134,6 +134,7 @@ public:
 	uint32_t m_LastActionTime;
 	string m_JoinedName;
 	string m_HostName;
+	bool m_SaveGame;
 
 	CGProxy( bool nTFT, string nWar3Path, string nCDKeyROC, string nCDKeyTFT, string nServer, string nUsername, string nPassword, string nChannel, uint32_t nWar3Version, uint16_t nPort, BYTEARRAY nEXEVersion, BYTEARRAY nEXEVersionHash, string nPasswordHashType );
 	~CGProxy( );
@@ -142,14 +143,13 @@ public:
 
 	bool Update( long usecBlock );
 
-	void ExtractLocalPackets( );
+	void ExtractLocalPackets();
 	void ProcessLocalPackets( );
-	void ExtractRemotePackets( );
+	void ExtractRemotePackets();
 	void ProcessRemotePackets( );
 
 	bool AddGame( CIncomingGameHost *game );
 	void SendLocalChat( string message );
 	void SendEmptyAction( );
 };
-
 #endif

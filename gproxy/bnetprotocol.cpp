@@ -148,7 +148,6 @@ vector<CIncomingGameHost *> CBNETProtocol :: RECEIVE_SID_GETADVLISTEX( BYTEARRAY
 			i += 8;
 			BYTEARRAY StatString = UTIL_ExtractCString( data, i );
 			i += StatString.size( ) + 1;
-
 			Games.push_back( new CIncomingGameHost( GameType, Parameter, LanguageID, Port, IP, Status, ElapsedTime, string( GameName.begin( ), GameName.end( ) ), SlotsTotal, HostCounter, StatString ) );
 		}
 	}
@@ -1115,7 +1114,10 @@ CIncomingGameHost :: CIncomingGameHost( uint16_t nGameType, uint16_t nParameter,
 		m_MapHeight = UTIL_ByteArrayToUInt16( MapHeight, false );
 		m_MapCRC = MapCRC;
 		m_MapPath = string( MapPath.begin( ), MapPath.end( ) );
-
+		/*if (m_MapPath.substr(m_MapPath.length() - 4, m_MapPath.length()) == ".w3z") {
+			m_GameType = 1 << 9;
+			//CONSOLE_Print("[GAME] A saved game is detected, if the slot is abnormal, please restart GProxy++.");
+		}*/
 		if( StatString.size( ) >= i + 1 )
 		{
 			HostName = UTIL_ExtractCString( StatString, i );

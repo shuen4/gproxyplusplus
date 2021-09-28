@@ -104,9 +104,9 @@ public:
 	uint32_t GetOutPacketsQueued( )		{ return m_OutPackets.size( ); }
 	BYTEARRAY GetUniqueName( );
 
-	void SetListPublicGames( bool nListPublicGames )		{ m_ListPublicGames = nListPublicGames; }
-	void SetPublicGameFilter( string nPublicGameFilter )	{ m_PublicGameFilter = nPublicGameFilter; }
-	void SetSearchGameName( string nSearchGameName )		{ m_SearchGameName = nSearchGameName; m_SearchGameNameTime = GetTime( ); }
+	void SetListPublicGames( bool nListPublicGames )											{ m_ListPublicGames = nListPublicGames; }
+	void SetPublicGameFilter( string nPublicGameFilter )										{ m_PublicGameFilter = nPublicGameFilter; }
+	void SetSearchGameName( string nSearchGameName ,uint32_t nSearchGameNameTime = GetTime())	{ m_SearchGameName = nSearchGameName; m_SearchGameNameTime = nSearchGameNameTime; }
 
 	// processing functions
 
