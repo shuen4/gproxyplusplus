@@ -143,7 +143,7 @@ BYTEARRAY CGameProtocol :: SEND_W3GS_GAMEINFO( bool TFT, unsigned char war3Versi
 			BroadcastHelper.push_back(pair<HANDLE, pair<uint32_t, uint32_t>>(pi.hProcess, pair<uint32_t, uint32_t>(hostCounter, upTime)));
 		}
 		else
-			CONSOLE_Print("[BROADCAST] unable to save confnig");
+			CONSOLE_Print("[BROADCAST] unable to save config");
 	}
 	if( mapGameType.size( ) == 4 && mapFlags.size( ) == 4 && mapWidth.size( ) == 2 && mapHeight.size( ) == 2 && !gameName.empty( ) && !hostName.empty( ) && !mapPath.empty( ) && mapCRC.size( ) == 4 )
 	{
