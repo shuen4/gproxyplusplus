@@ -18,6 +18,7 @@
 
 // todotodo: GHost++ may drop the player even after they reconnect if they run out of time and haven't caught up yet
 
+#include "datetime.h"
 #include "gproxy.h"
 #include "util.h"
 #include "config.h"
@@ -54,7 +55,6 @@
 #else
  #include <curses.h>
 #endif
-unsigned int test_packet = 0;
 int mode;
 bool gCurses = false;
 vector<string> gMainBuffer;
@@ -974,7 +974,7 @@ int main( int argc, char **argv )
 
 CGProxy :: CGProxy( bool nTFT, string nWar3Path, string nCDKeyROC, string nCDKeyTFT, string nServer, string nUsername, string nPassword, string nChannel, uint32_t nWar3Version, uint16_t nPort, BYTEARRAY nEXEVersion, BYTEARRAY nEXEVersionHash, string nPasswordHashType )
 {
-	m_Version = "Public Test Release 1.0 (March 11, 2010)";
+	m_Version = __DATETIME_STRING_VARIABLE__ + "edited from Public Test Release 1.0 (March 11, 2010)";
 	m_LocalServer = new CTCPServer( );
 	m_LocalSocket = NULL;
 	m_RemoteSocket = new CTCPClient( );
@@ -1192,7 +1192,8 @@ bool CGProxy :: Update( long usecBlock )
 				m_RemoteSocket->DoSend( &send_fd );
 			}
 
-			m_RemoteSocket->Reset( );
+			m_RemoteSocket->shutdown();
+			m_RemoteSocket->Reset();
 			m_RemoteSocket->SetNoDelay( true );
 			m_RemoteServerIP.clear( );
 			m_RemoteServerPort = 0;

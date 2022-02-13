@@ -156,6 +156,7 @@ public:
 	virtual void Disconnect( );
 	virtual void SetNoDelay( bool noDelay );
 	virtual void SetLogFile( string nLogFile )	{ m_LogFile = nLogFile; }
+	virtual void shutdown();
 };
 
 //

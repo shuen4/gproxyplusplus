@@ -144,8 +144,8 @@ void CSocket :: Allocate( int type )
 
 void CSocket :: Reset( )
 {
-	if( m_Socket != INVALID_SOCKET )
-		closesocket( m_Socket );
+	if (m_Socket != INVALID_SOCKET)
+		closesocket(m_Socket);
 
 	m_Socket = INVALID_SOCKET;
 	memset( &m_SIN, 0, sizeof( m_SIN ) );
@@ -333,7 +333,7 @@ void CTCPSocket :: DoSend( fd_set *send_fd )
 void CTCPSocket :: Disconnect( )
 {
 	if( m_Socket != INVALID_SOCKET )
-		shutdown( m_Socket, SHUT_RDWR );
+		::shutdown( m_Socket, SHUT_RDWR );
 
 	m_Connected = false;
 }
@@ -790,6 +790,28 @@ void CUDPServer :: RecvFrom( fd_set *fd, struct sockaddr_in *sin, string *messag
 			// success!
 
 			*message = string( buffer, c );
+		}
+	}
+}
+void CTCPSocket::shutdown()
+{
+	if (m_Socket != INVALID_SOCKET) {
+		::shutdown(m_Socket, SD_SEND);
+		int i = 1;
+		int ret = 0;
+		char buffer[65535];
+		while (true) {
+			ret = recv(m_Socket, buffer, sizeof(buffer), 0);
+			if (ret == 0)
+				break;
+			else if (ret > 0) {}
+			else if (GetLastError() == EWOULDBLOCK)
+				if (i++ == 100)
+					break;
+				else
+					MILLISLEEP(10);
+			else
+				break;
 		}
 	}
 }
